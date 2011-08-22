@@ -1,0 +1,111 @@
+%
+% Complete documentation on the extended LaTeX markup used for Insight
+% documentation is available in ``Documenting Insight'', which is part
+% of the standard documentation for Insight.  It may be found online
+% at:
+%
+%     http://www.itk.org/
+
+\documentclass{InsightArticle}
+
+\usepackage[dvips]{graphicx}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  hyperref should be the last package to be loaded.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[dvips,
+bookmarks,
+bookmarksopen,
+backref,
+colorlinks,linkcolor={blue},citecolor={blue},urlcolor={blue},
+]{hyperref}
+
+\usepackage{amsthm}
+\theoremstyle{plain}
+\newtheorem*{note}{Note}
+
+%  This is a template for Papers to the Insight Journal.
+%  It is comparable to a technical report format.
+
+% The title should be descriptive enough for people to be able to find
+% the relevant document.
+\title{Surface Mesh Normals Filter}
+
+% Increment the release number whenever significant changes are made.
+% The author and/or editor can define 'significant' however they like.
+\release{0.01}
+
+% At minimum, give your name and an email address.  You can include a
+% snail-mail address if you like.
+\author{Arnaud Gelas, Alexandre Gouaillard and Sean Megason}
+\authoraddress{Megason Lab, Harvard Medical School}
+
+
+
+\begin{document}
+
+
+\ifpdf
+\else
+   %
+   % Commands for including Graphics when using latex
+   %
+   \DeclareGraphicsExtensions{.eps,.jpg,.gif,.tiff,.bmp,.png}
+   \DeclareGraphicsRule{.jpg}{eps}{.jpg.bb}{`convert #1 eps:-}
+   \DeclareGraphicsRule{.gif}{eps}{.gif.bb}{`convert #1 eps:-}
+   \DeclareGraphicsRule{.tiff}{eps}{.tiff.bb}{`convert #1 eps:-}
+   \DeclareGraphicsRule{.bmp}{eps}{.bmp.bb}{`convert #1 eps:-}
+   \DeclareGraphicsRule{.png}{eps}{.png.bb}{`convert #1 eps:-}
+\fi
+
+
+\maketitle
+
+
+\ifhtml
+\chapter*{Front Matter\label{front}}
+\fi
+
+
+% The abstract should be a paragraph or two long, and describe the
+% scope of the document.
+\begin{abstract}
+\noindent
+We have previously developed a new surface mesh data structure in itk (\code{itk::QuadEdgeMesh}~\cite{itkQE}). In this document we describe a new filter (\code{itk::QENormalFilter}) to estimate normals for a given triangular surface mesh in this data structure. Here we describe the implementation and use of this filter for calculating normals of a \code{itk::QuadEdgeMesh}.
+\end{abstract}
+
+\tableofcontents
+
+\section{Description}
+This filter takes as input one triangular surface mesh (\code{itk::QuadEdgeMesh}~\cite{itkQE}) and returns one triangular surface mesh with face normals stored in the \code{CellDataContainer} and vertex normals stored in the \code{PointDataContainer}. It first computes the normal to all faces, and then calculates the normal for each vertex as the weighted sum of the normals of the neighboring faces~\cite{Jin05}.
+
+\section{Implementation}
+For a given triangular face on a given triangular surface oriented mesh, the normal is computed as the cross product of oriented vectors in order to make the orientation consistent. Then the vertex normal is computed as a weighted sum of the normal to the neighboring faces:
+\begin{equation}
+  \mathbf{n}_{\mathbf{v}} = \frac{\sum\limits_{i=0}^{\#f} w_i \cdot \mathbf{n}_i}{\left\|\sum\limits_{k=0}^{\#f} w_k \cdot \mathbf{n}_k \right\|}
+\end{equation}
+where $\#f$ is the number of faces around one given vertex $\mathbf{v}$, $w_i$ is a weight parameter which depends on the variable \code{m\_Weight}:
+\begin{description}
+  \item[GOURAUD: ] $w_i=1$ for any triangle~\cite{Gouraud71},
+  \item[THURMER: ] $w_i$ is the angle of the considered triangle at the given vertex~\cite{Thurmer98},
+  \item[AREA: ] $w_i$ is the area of the considered triangle.
+ \end{description}
+
+\begin{note}
+  One can easily makes his or her own weight, or reimplements other weights (see~\cite{Jin05}), by modifying the method \code{itk::QENormalFilter::Weight}.
+\end{note}
+
+\section{Usage}
+This filter is really easy to use, see given example \code{NormalFilter.cxx}.
+
+\section*{Acknowledgment}
+This work was funded by a grant from the NHGRI (P50HG004071-02) to found the Center for in toto genomic analysis of vertebrate development.
+
+\bibliographystyle{plain}
+\bibliography{normal}
+
+
+\end{document}
+
